@@ -1,0 +1,28 @@
+# Dependencies
+# Installed by npm; regenerated from package.json. Never commit it.
+node_modules/
+
+# Build output
+# A generated copy of the app (build/index.html + a duplicate gcashqr.jpg).
+# Generated from picklestacker.html, so committing it only creates a stale
+# second copy to keep in sync. Source of truth stays at the repo root.
+build/
+dist/
+out/
+
+# Local scratch work
+# Holds a live firebaseConfig for the cherms-apps project. Keep it out of the
+# public repo; use `git add -f <path>` if a file here genuinely needs tracking.
+_docs/
+
+# npm manifests
+# NOTE: npm's convention is the opposite of this -- package.json and
+# package-lock.json are normally COMMITTED so the firebase dependency and the
+# exact installed tree are reproducible. They are ignored here only because the
+# Firebase scaffold is still WIP. Delete these two lines when that settles.
+package.json
+package-lock.json
+
+# OS / editor noise
+Thumbs.db
+.DS_Store

@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pickleball Open Play</title>
+<title>Pickle Stacker</title>
 <style>
 /* ============================================================================
-   PICKLEBALL OPEN PLAY — stylesheet
+   PICKLE STACKER — stylesheet
    Sections: tokens / base / header / layout / buttons / panels / forms /
              player list / courts / waiting queue / scores / stats /
              fairness / history / footer
@@ -119,7 +119,8 @@ a{color:var(--green-600)}
 
 /* Round control bar: a single line, never wrapped. It sits above both columns,
    so `flex-wrap:nowrap` keeps it one line at any width and the row scrolls
-   sideways on narrow screens instead of stacking into a tall block. */
+   sideways on narrow screens instead of stacking into a tall block. Phones are
+   the exception — see the `max-width:1000px` block below. */
 .roundbar{
   display:flex;flex-wrap:nowrap;align-items:center;gap:8px;
   padding:9px 14px;margin-bottom:14px;overflow-x:auto;scrollbar-width:thin;
@@ -132,6 +133,46 @@ a{color:var(--green-600)}
 .roundbar .btn{flex:0 0 auto;white-space:nowrap;min-height:30px}
 .roundbar-spacer{flex:1 1 auto;min-width:10px}
 .roundbar-msg{margin:0 0 14px}
+/* Row wrappers: on desktop `display:contents` makes them invisible to layout, so
+   the bar stays the single line it always was. Phones turn them into real rows. */
+.roundbar-row{display:contents}
+@media (max-width:1000px){
+  /* Phones: stack the bar into one row per group — primary actions, secondary
+     actions, then the destructive reset full width — instead of one long line
+     that has to be scrolled sideways. */
+  .roundbar{flex-wrap:wrap;overflow:visible}
+  .roundbar-spacer{display:none}
+  .roundbar-row{display:flex;flex:1 1 100%;gap:8px;min-width:0}
+  /* Equal halves per row, and labels may wrap inside the button when a narrow
+     phone cannot fit them side by side at full width. */
+  .roundbar .btn{flex:1 1 0;min-width:0;white-space:normal}
+}
+
+/* ---------- 4a. First-launch prompt (phones) ----------
+   The state flag on <body> is `is-first-run`, deliberately NOT `first-run`: the
+   prompt card below is itself `.first-run`, and a bare `.first-run{display:none}`
+   rule would otherwise match the body too and hide the entire page. */
+.first-run{display:none}
+@media (max-width:1000px){
+  body.is-first-run .first-run{
+    display:block;margin:0 0 12px;padding:16px 14px;
+    border:1px solid #cfe6dc;border-radius:var(--radius);background:var(--green-100);
+    text-align:center;
+  }
+  /* The courts panel's own empty state mentions "Generate Next Round", which is
+     parked in the drawer on mobile -- hide it so there is one clear next step. */
+  body.is-first-run #courts > .empty{display:none}
+}
+.fr-title{font-size:14.5px;font-weight:800;color:var(--ink);margin:0 0 5px}
+.fr-text{font-size:13px;color:var(--ink-2);margin:0}
+.fr-link{
+  appearance:none;cursor:pointer;font:inherit;
+  border:1px solid var(--green-700);background:var(--green-600);color:#fff;
+  border-radius:999px;padding:2px 11px;font-size:12.5px;font-weight:700;
+}
+.fr-link:hover{background:var(--green-700)}
+.fr-link:active{transform:translateY(1px)}
+.fr-link:focus-visible{outline:3px solid #9ed3bb;outline-offset:2px}
 
 /* ---------- 4b. Mobile settings page ----------
    Panels are grouped in `.sec` wrappers. On desktop `display:contents` makes
@@ -147,9 +188,25 @@ a{color:var(--green-600)}
   width:40px;height:40px;flex:0 0 40px;cursor:pointer;padding:0;
   align-items:center;justify-content:center;
 }
-.hamburger svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round}
+.hamburger svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .hamburger:hover{background:rgba(255,255,255,.2)}
 .hamburger:focus-visible{outline:3px solid #9ed3bb;outline-offset:2px}
+
+/* ---------- 4c. Donate ---------- */
+.donate{display:flex;align-items:center;gap:8px}
+.donate-ask{font-size:12.5px;letter-spacing:.03em;color:#d8efe4;white-space:nowrap}
+.donate-btn{
+  appearance:none;cursor:pointer;white-space:nowrap;font-family:inherit;
+  /* Gradient pink, with white bold text on the darker end (~4.8:1, passes AA). */
+  border:1px solid #b81b50;color:#fff;
+  background:linear-gradient(135deg,#ff86b8 0%,#d9245f 100%);
+  border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;
+  box-shadow:0 1px 3px rgba(120,10,50,.35);
+  transition:filter .12s,box-shadow .12s;
+}
+.donate-btn:hover{filter:brightness(1.08);box-shadow:0 2px 6px rgba(120,10,50,.42)}
+.donate-btn:active{filter:brightness(.95)}
+.donate-btn:focus-visible{outline:3px solid #ffc0d8;outline-offset:2px}
 
 .settings-dialog{
   border:0;border-radius:0;padding:0;width:100%;max-width:none;height:100%;
@@ -367,6 +424,32 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 .qrow .qn{font-weight:650;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qrow .qm{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
 
+/* Provisional next pairing, shown ABOVE the waiting queue. The rule sits on the
+   bottom edge because the preview is no longer the last element in the box. */
+.qrow.next{background:#f2fbf6;border-color:#a9dcc4}
+.pill.np-flag{
+  background:var(--green-100);color:var(--green-700);border-color:#a9dcc4;
+  font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;padding:1px 5px;
+}
+.np{
+  margin:0 0 11px;padding:0 0 10px;border-bottom:1px dashed #e0c98f;
+}
+.np-head{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;
+}
+.np-head b{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#8a5c11}
+.np-head span{font-size:11.5px;color:#8a5c11}
+.np-teams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:0}
+.np-teams .vs{padding:0 5px;font-size:10px}
+.np-row{
+  display:flex;align-items:baseline;gap:6px;justify-content:space-between;
+  padding:2px 0;border-top:1px dashed rgba(0,0,0,.09);
+}
+.np-row:first-of-type{border-top:0}
+.np-row b{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-row span{font-size:11px;color:var(--ink-3);white-space:nowrap;flex:0 0 auto}
+.np-note{margin:8px 0 0;font-size:11px;line-height:1.45;color:#8a5c11}
+
 /* ---------- 10. Stats table ---------- */
 .stats-table{width:100%;border-collapse:collapse;font-size:13.5px}
 .stats-table th{
@@ -376,6 +459,12 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 .stats-table td{padding:8px;border-bottom:1px solid #eef2f0;vertical-align:middle}
 .stats-table tbody tr:last-child td{border-bottom:0}
 .stats-table tbody tr.under{background:#fffaf0}
+
+/* Rank number + the "rank by" chips in the card head. */
+.rank-col{width:34px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.stats-table tbody td.rank-col{font-size:12.5px;font-weight:750}
+.stats-head-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.stats-head-right .hint{font-size:11.5px;color:var(--ink-3)}
 .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .wl{font-weight:700}
@@ -541,6 +630,26 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
   padding:10px 16px;border-top:1px solid var(--line);background:#fbfdfc;
 }
 .dlg-note{font-size:11.5px;color:var(--ink-3)}
+
+/* Donation QR modal. The source image is 768x1208 (portrait), so it is sized by
+   height and allowed to shrink on narrow screens. */
+.donate-dialog{
+  border:0;border-radius:var(--radius);padding:0;
+  width:min(400px,calc(100vw - 24px));max-height:94vh;
+  box-shadow:0 24px 60px rgba(8,40,30,.32);color:var(--ink);background:#fff;overflow:hidden;
+}
+.donate-dialog::backdrop{background:rgba(11,52,38,.55)}
+.donate-dialog[open]{display:flex;flex-direction:column}
+.donate-body{
+  display:flex;flex-direction:column;align-items:center;gap:11px;
+  padding:16px;overflow-y:auto;
+}
+.donate-body img{
+  max-width:100%;width:auto;height:auto;max-height:56vh;
+  border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;
+}
+.donate-dl{text-decoration:none}
+.donate-body .dlg-note{margin:0;text-align:center}
 @media (max-width:520px){
   .swap-dialog{width:calc(100vw - 16px);max-height:90vh}
   .dlg-row{grid-template-columns:minmax(0,1fr) auto}
@@ -567,64 +676,86 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* ---------- 14. Compact phone layout ----------
-   The main view on a phone is Court Assignments + the waiting queue, so every
-   pixel of padding there is a pixel of data not shown. The big win is keeping
-   Team A | VS | Team B on ONE row: it used to stack below 420px, which made a
-   single court taller than the screen. Pairing each player's rating onto the
-   same line as their name does the rest. Nothing is hidden — the only removal
-   is the decorative tagline and the per-player "swap" badge, which #swapTip
-   already explains. */
+   The main view on a phone is Court Assignments + the waiting queue. The density
+   comes from LAYOUT, not from shrinking text: the two sides stay on ONE row
+   (they used to stack below 420px, which made a single court taller than the
+   screen). That one change roughly halves the card, so type can stay at desktop
+   size — or better — because a phone needs it more, not less.
+
+   Each player row keeps the natural two-line block (name, then rating). An
+   earlier attempt paired them on one line, but a team column is only ~155px and
+   "Rating 3.50 · 1 gp" alone eats most of it, which crushed the name. Two lines
+   per player costs ~14px a card against the side-by-side saving.
+
+   #swapTip is hidden here, so the per-player "swap" badge comes back: it is the
+   only remaining cue that tapping a name opens the substitute picker, and touch
+   has no hover to fall back on. */
 @media (max-width:560px){
   /* Chrome */
   .wrap{padding:10px 8px 40px}
   .card{padding:10px}
   .site-header{padding:10px 10px}
-  .brand-ball{width:32px;height:32px;flex-basis:32px}
+  .brand-ball{width:34px;height:34px;flex-basis:34px}
   .brand{gap:9px}
-  .brand h1{font-size:15px;letter-spacing:.08em}
+  .brand h1{font-size:17px;letter-spacing:.08em}
   .brand p{display:none}                       /* decorative tagline */
   .header-stats{gap:5px}
-  .hstat{padding:4px 7px;min-width:0}
-  .hstat b{font-size:14px}
-  .hstat span{font-size:9px;letter-spacing:.05em}
-  .footer{padding:0 10px 24px;font-size:10.5px}
+  .hstat{padding:4px 8px;min-width:0}
+  .hstat b{font-size:16px}
+  .hstat span{font-size:10px;letter-spacing:.05em}
+  .footer{padding:0 10px 24px;font-size:11px}
+  .donate{gap:6px}
+  .donate-ask{font-size:11.5px}
+  .donate-btn{padding:3px 12px;font-size:11px}
 
   /* Court cards */
   .courts{gap:8px}
-  .court-head{padding:6px 10px}
-  .court-head .cn{font-size:11.5px;letter-spacing:.08em}
-  .court-head .bal{font-size:9.5px;padding:2px 6px}
-  .court-body{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:0;padding:7px}
-  .vs{padding:0 3px;font-size:9.5px}
+  .swap-tip{display:none}                      /* verbose banner, replaced by the per-player badge */
+  .court-head{padding:5px 10px}
+  .court-head .cn{font-size:12.5px;letter-spacing:.08em}
+  .court-head .bal{font-size:10px;padding:2px 6px}
+  .court-body{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:0;padding:6px}
+  .vs{padding:0 3px;font-size:10px}
 
-  .team{padding:6px 5px;border-radius:7px}
-  .team-tag{margin-bottom:4px}
-  .team-tag > span{font-size:9px;letter-spacing:.08em}
+  .team{padding:5px 4px;border-radius:7px}
+  .team-tag{margin-bottom:3px}
+  .team-tag > span{font-size:9.5px;letter-spacing:.08em}
 
-  /* Name + rating on one line; the badge yields its space to the rating. */
-  .team button.pr{display:flex;align-items:baseline;gap:5px;padding:3px 2px;border-radius:4px}
-  .team .pr b{font-size:12.5px;flex:1 1 auto;min-width:0}
-  .team .pr span{font-size:10px;flex:0 0 auto}
-  .swap-hint{display:none}                     /* #swapTip covers the tap gesture */
+  /* Two-line player row. The right padding reserves the badge's lane so it
+     cannot sit on top of the name. */
+  .team button.pr{padding:2px 34px 2px 3px;border-radius:4px}
+  .team .pr b{font-size:15px}
+  .team .pr span{font-size:11.5px}
+  .swap-hint{display:block;top:3px;right:3px;transform:none;font-size:9px;padding:1px 4px;opacity:.7}
 
-  .team-sum{margin-top:5px;padding-top:5px;font-size:10.5px}
-  .score-in{margin-top:5px;gap:5px}
-  .score-in > span{font-size:9px;letter-spacing:.06em}
-  .score-in input{flex:1 1 0;min-width:0;width:auto;font-size:14px;padding:3px 4px}
+  .team-sum{margin-top:4px;padding-top:4px;font-size:11.5px}
+  .score-in{margin-top:4px;gap:5px}
+  .score-in > span{font-size:10px;letter-spacing:.06em}
+  .score-in input{flex:1 1 0;min-width:0;width:auto;font-size:16px;padding:3px 4px}
 
-  .court-foot{padding:6px 10px;font-size:10.5px;gap:6px}
-  .court-actions-bar{gap:5px;padding:0 10px 10px}
-  .court-actions-bar .btn{flex:1 1 0;min-width:0;min-height:26px;font-size:10.5px;padding:5px 4px;line-height:1.15}
-  .save-score{font-size:10.5px;min-height:26px;padding:5px 7px}
+  .court-foot{padding:5px 10px;font-size:11.5px;gap:6px}
+  .court-actions-bar{gap:5px;padding:0 10px 9px}
+  .court-actions-bar .btn{flex:1 1 0;min-width:0;min-height:28px;font-size:12px;padding:5px 4px;line-height:1.15}
+  .save-score{font-size:12px;min-height:28px;padding:5px 7px}
 
-  /* Banner + waiting queue */
-  .swap-tip{font-size:11px;padding:6px 9px;margin-bottom:9px}
+  /* Waiting queue */
   .queue{margin-top:9px;padding:9px}
-  .queue h3{font-size:11px;margin-bottom:6px}
+  .queue h3{font-size:11.5px;margin-bottom:6px}
   .qlist{gap:4px}
   .qrow{padding:5px 8px;gap:8px}
-  .qpos{width:18px;height:18px;flex-basis:18px;font-size:10px}
-  .qrow .qm{font-size:10.5px}
+  .qpos{width:19px;height:19px;flex-basis:19px;font-size:10.5px}
+  .qrow .qm{font-size:11px}
+
+  /* Next-pairing preview (sits above the queue heading) */
+  .np{margin-bottom:9px;padding-bottom:8px}
+  .np-head{margin-bottom:6px;gap:6px}
+  .np-head b{font-size:10.5px}
+  .np-head span{font-size:11px}
+  .np-teams .team{padding:5px 4px}
+  .np-teams .vs{padding:0 3px}
+  .np-row b{font-size:13px}
+  .np-row span{font-size:10.5px}
+  .np-note{margin-top:7px;font-size:10.5px;line-height:1.4}
 }
 @media print{
   .site-header{background:#fff;color:#000;border-bottom:2px solid #000}
@@ -639,36 +770,48 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
   <div class="header-inner">
     <button type="button" class="hamburger" id="settingsBtn"
             aria-label="Open settings and reports" aria-haspopup="dialog" aria-expanded="false">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.62.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54C14.36 2.57 14.16 2.4 13.92 2.4h-3.84c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.86c-.12.21-.08.47.12.61l2.03 1.58c-.05.31-.07.63-.07.95s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58z"/><circle cx="12" cy="12" r="3.6"/></svg>
     </button>
     <div class="brand">
       <div class="brand-ball" aria-hidden="true"></div>
       <div>
-        <h1>Pickleball Open Play</h1>
+        <h1>Pickle Stacker</h1>
         <p>Fair Games &bull; Balanced Skills &bull; Everyone Plays</p>
       </div>
     </div>
     <div class="header-stats" id="headerStats"></div>
+    <div class="donate">
+      <span class="donate-ask">Love this app?</span>
+      <button type="button" class="donate-btn" id="donateBtn"
+              aria-haspopup="dialog" aria-controls="donateDialog">Please Donate</button>
+    </div>
   </div>
 </header>
 
 <main class="wrap">
 
   <!-- Round Control: one compact line spanning both columns, straight under the header.
-       Wrapped in .sec so mobile can move it into the settings page. -->
+       Buttons sit in `.roundbar-row` wrappers (invisible on desktop, real rows on
+       phones). Wrapped in .sec so mobile can move it into the settings page. -->
   <div class="sec" id="secBar">
   <section class="card roundbar" aria-label="Round control">
     <h2>Round Control</h2>
     <span class="hint" id="roundProgress">Round 0 of 10</span>
-    <button type="button" class="btn btn-primary btn-sm" id="nextRoundBtn">&#9654;&nbsp;Generate Next Round</button>
-    <button type="button" class="btn btn-accent btn-sm" id="endAllBtn"
-      title="End every court at once. To finish a single court, use &quot;End game &amp; assign next&quot; on that court card — the other courts keep playing.">
-      &#9632;&#9632;&nbsp;End All &amp; Reseat
-    </button>
-    <button type="button" class="btn btn-ghost btn-sm" id="undoBtn">&#8630;&nbsp;Undo Round</button>
-    <button type="button" class="btn btn-ghost btn-sm" id="clearScoresBtn">Clear Scores</button>
+    <div class="roundbar-row">
+      <button type="button" class="btn btn-primary btn-sm" id="nextRoundBtn">&#9654;&nbsp;Generate Next Round</button>
+      <button type="button" class="btn btn-accent btn-sm" id="endAllBtn"
+        title="End every court at once. To finish a single court, use &quot;End game &amp; assign next&quot; on that court card — the other courts keep playing.">
+        &#9632;&#9632;&nbsp;End All &amp; Reseat
+      </button>
+    </div>
+    <div class="roundbar-row">
+      <button type="button" class="btn btn-ghost btn-sm" id="undoBtn">&#8630;&nbsp;Undo Round</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="clearScoresBtn">Clear Scores</button>
+    </div>
     <span class="roundbar-spacer" aria-hidden="true"></span>
-    <button type="button" class="btn btn-danger btn-sm" id="resetBtn">&#8635;&nbsp;Reset Session</button>
+    <div class="roundbar-row">
+      <button type="button" class="btn btn-danger btn-sm" id="resetBtn">&#8635;&nbsp;Reset Session</button>
+    </div>
   </section>
   <div id="roundMsg" class="note roundbar-msg" hidden></div>
   </div>
@@ -749,10 +892,24 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
       <!-- Courts -->
       <section class="card">
         <div class="card-head"><h2>Court Assignments</h2><span class="hint" id="courtHint"></span></div>
+        <!-- First launch, phones only. On mobile the main view is just the
+             courts, and both the Add Player form and the Generate button live
+             behind the hamburger -- so without this the empty state points at a
+             button the organiser cannot see. Visibility is driven entirely by
+             body.is-first-run in CSS; no hidden attribute to fight with display. -->
+        <div class="first-run" id="firstRun">
+          <p class="fr-title">Welcome to Pickle Stacker</p>
+          <p class="fr-text">
+            <button type="button" class="fr-link" id="firstRunBtn"
+                    aria-haspopup="dialog" aria-controls="settingsDialog">Open Settings</button>
+            to add players and generate a round.
+          </p>
+        </div>
         <div id="roundBanner"></div>
         <div id="swapTip" class="swap-tip" hidden></div>
         <div class="courts" id="courts"></div>
         <div class="queue" id="waitingBox" hidden>
+          <div id="nextPreview" class="np" hidden></div>
           <h3 id="waitingTitle">Waiting Queue</h3>
           <ul class="qlist" id="waitingList"></ul>
         </div>
@@ -786,16 +943,27 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 
       <!-- Stats -->
       <section class="card">
-        <div class="card-head"><h2>Player Statistics</h2><span class="hint">Strongest first &mdash; most wins, then average winning margin</span></div>
+        <div class="card-head">
+          <h2>Player Statistics</h2>
+          <div class="stats-head-right">
+            <span class="hint" id="statsHint">Strongest first</span>
+            <div class="dlg-sorts" role="group" aria-label="Rank players by">
+              <button type="button" class="chip on" data-stats-rank="wins" aria-pressed="true">Most wins</button>
+              <button type="button" class="chip" data-stats-rank="pct" aria-pressed="false">Win&nbsp;%</button>
+            </div>
+          </div>
+        </div>
         <div class="table-scroll">
           <table class="stats-table" id="statsTable">
             <thead>
               <tr>
+                <th class="num rank-col">#</th>
                 <th>Player</th>
                 <th class="num">Rating</th>
                 <th class="num">Games</th>
                 <th class="num">W-L</th>
                 <th class="num" title="Average points won per win">Avg Margin</th>
+                <th class="num" title="Wins as a share of decided games (scored games only)">Win&nbsp;%</th>
                 <th class="num">Teammates</th>
                 <th class="num">Opponents</th>
                 <th class="num">Last Round</th>
@@ -852,6 +1020,25 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- Donation QR. Same native <dialog> pattern as the other modals. The image is
+     a sibling FILE, not inlined: base64 would add ~217 KB of unreadable text to
+     this HTML for a 159 KB asset. Keep gcashqr.jpg next to this file. -->
+<dialog class="donate-dialog" id="donateDialog" aria-labelledby="donateDlgTitle">
+  <div class="dlg-head">
+    <div class="dlg-heading">
+      <h3 id="donateDlgTitle">Thank you!</h3>
+      <p>Scan the QR code with GCash to support Pickle Stacker.</p>
+    </div>
+    <button type="button" class="dlg-x" id="donateDlgClose" aria-label="Close dialog">&times;</button>
+  </div>
+  <div class="donate-body">
+    <img id="donateQr" src="gcashqr.jpg" alt="GCash payment QR code" width="768" height="1208" />
+    <a class="btn btn-primary btn-sm donate-dl" id="donateDownload"
+       href="gcashqr.jpg" download="gcashqr.jpg">Download QR</a>
+    <p class="dlg-note">Keep the QR handy — it works on any device with GCash.</p>
+  </div>
+</dialog>
+
 <!-- Settings page (mobile). The .sec panel groups are MOVED in here while it is
      open, so every control keeps its original markup and event wiring. -->
 <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle">
@@ -892,7 +1079,7 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 
 <script>
 /* ============================================================================
- * PICKLEBALL OPEN PLAY — application script
+ * PICKLE STACKER — application script
  *
  * Sections
  *   1.  Constants & tunable weights
@@ -1234,7 +1421,7 @@ const clampRating = v => {
 /** Full JSON session export (download + clipboard friendly). */
 function exportSession(){
   const payload = {
-    app: "Pickleball Open Play",
+    app: "Pickle Stacker",
     version: 1,
     exportedAt: new Date().toISOString(),
     state
@@ -1245,7 +1432,7 @@ function exportSession(){
   const a = document.createElement("a");
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   a.href = url;
-  a.download = `pickleball-open-play-${stamp}.json`;
+  a.download = `pickle-stacker-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1434,6 +1621,35 @@ function planOneCourt(courtNumber){
   if (pool.length < MIN_COURT_PLAYERS) return null;
   const plan = planCourts(pool, 1, state.rounds, [courtNumber]);
   return plan.length ? plan[0] : null;
+}
+
+/**
+ * Dry run of the court that would be seated next, using the real scheduler so
+ * the preview can never disagree with what actually gets assigned. Pure — it
+ * builds nothing and mutates nothing, so it is safe to call from every render.
+ *
+ * Scoped to the players who are free RIGHT NOW. Ending a game returns those
+ * four to the pool, which can change the answer, so the UI states that the
+ * preview is provisional.
+ *
+ * @returns {{courtNumber:number, teamA:Array, teamB:Array, gap:number, idleCourt:boolean}|null}
+ */
+function previewNextPairing(){
+  const r = currentRound();
+  if (!r || !r.courts.length) return null;
+  if (availablePool().length < MIN_COURT_PLAYERS) return null;
+  // Prefer a court that is genuinely idle; otherwise show what ending one gives.
+  const idleNums = r.courts.filter(c => !liveGame(c)).map(c => c.courtNumber);
+  const target = idleNums.length ? idleNums[0] : r.courts[0].courtNumber;
+  const plan = planOneCourt(target);
+  if (!plan) return null;
+  return {
+    courtNumber: target,
+    teamA: plan.teamA,
+    teamB: plan.teamB,
+    gap: plan.skillBalance,
+    idleCourt: idleNums.length > 0
+  };
 }
 
 /** Precomputed lookup tables for one scheduling pass. */
@@ -2042,6 +2258,15 @@ function renderCourts(){
   const courtsEl = $("#courts");
   const waitBox = $("#waitingBox");
 
+  // Fresh install: nothing to show and, on a phone, nothing to press. The
+  // prompt points at Settings instead. Purely a class toggle -- CSS decides
+  // whether that becomes visible, and it only does so under the phone
+  // breakpoint, so desktop keeps its own "Generate Next Round" empty state.
+  // The class is `is-first-run`, not `first-run`: the prompt card carries the
+  // latter, and a bare `.first-run{display:none}` rule would match <body> too
+  // and blank the entire page.
+  document.body.classList.toggle("is-first-run", !state.players.length && !state.rounds.length);
+
   if (!r){
     banner.innerHTML = "";
     $("#courtHint").textContent = "";
@@ -2049,6 +2274,10 @@ function renderCourts(){
     $("#swapTip").innerHTML = "";
     courtsEl.innerHTML = `<div class="empty">No round generated yet.<br>Press <b>Generate Next Round</b> to assign courts.</div>`;
     waitBox.hidden = true;
+    $("#waitingList").innerHTML = "";
+    // Clear the preview too, or a stale pairing outlives the session that
+    // produced it (e.g. after "Clear All Players").
+    renderNextPreview(null);
     return;
   }
 
@@ -2094,6 +2323,10 @@ function renderCourts(){
     return [...g.teamA, ...g.teamB];
   }).map(byId).filter(Boolean);
   const queue = orderWaiting(availablePool().map(p => p.id), onCourt);
+  const preview = previewNextPairing();
+  // The four who would be seated are flagged in the queue so the organiser can
+  // see who drops off it.
+  const nextIds = new Set(preview ? [...preview.teamA, ...preview.teamB] : []);
   if (!queue.length){
     waitBox.hidden = true;
     $("#waitingList").innerHTML = "";
@@ -2101,12 +2334,49 @@ function renderCourts(){
     waitBox.hidden = false;
     $("#waitingTitle").textContent = `Waiting Queue (${queue.length})`;
     $("#waitingList").innerHTML = queue.map((p, i) => `
-      <li class="qrow">
+      <li class="qrow${nextIds.has(p.id) ? " next" : ""}">
         <span class="qpos">${i + 1}</span>
         <span class="qn">${esc(p.name)} <span class="pill rating">${fmt2(p.rating)}</span></span>
-        <span class="qm">${p.games} game${p.games === 1 ? "" : "s"} · sat out ${p.waitStreak}</span>
+        <span class="qm">${p.games} game${p.games === 1 ? "" : "s"} · sat out ${p.waitStreak}${
+          nextIds.has(p.id) ? ' <span class="pill np-flag">next up</span>' : ""}</span>
       </li>`).join("");
   }
+  renderNextPreview(preview);
+}
+
+/** Paint the provisional next pairing under the waiting queue. */
+function renderNextPreview(preview){
+  const host = $("#nextPreview");
+  if (!preview){
+    host.hidden = true;
+    host.innerHTML = "";
+    return;
+  }
+  const side = (ids, cls, label) => `
+    <div class="team ${cls}">
+      <div class="team-tag"><span>Team ${label}</span></div>
+      ${ids.map(id => {
+        const p = byId(id) || {};
+        return `<div class="np-row"><b>${esc(p.name || "?")}</b>` +
+               `<span>${fmt2(p.rating)} · ${p.games || 0}gp</span></div>`;
+      }).join("")}
+    </div>`;
+  const where = preview.idleCourt
+    ? `court ${preview.courtNumber} is idle`
+    : `if court ${preview.courtNumber} is ended`;
+  host.hidden = false;
+  host.innerHTML = `
+    <div class="np-head">
+      <b>Next pairing</b>
+      <span>${where} · gap ${fmt2(preview.gap)}</span>
+    </div>
+    <div class="np-teams">
+      ${side(preview.teamA, "a", "A")}
+      <div class="vs">VS</div>
+      ${side(preview.teamB, "b", "B")}
+    </div>
+    <p class="np-note">Preview from the players free right now. Ending a game puts
+      those four back in the queue, and this pairing is recalculated.</p>`;
 }
 
 function courtCard(c){
@@ -2259,38 +2529,61 @@ function renderFairness(){
 }
 
 /**
- * Strongest player first: most wins, then the better average winning margin.
- * Rating only breaks a dead heat, and name keeps the order stable so the table
- * never reshuffles for equal players. Players with no wins sort last — they have
- * no margin to compare, which is why avgWinMargin is null rather than 0.
+ * Ranking the Player Statistics table.
+ *
+ * `statsRankBy` picks the headline measure: "wins" (raw total) or "pct" (win
+ * percentage). Both then fall through to the same tie-breakers so the order only
+ * ever changes on the measure the organiser chose.
+ *
+ * Null-valued measures sort last rather than as 0, which is why avgWinMargin and
+ * winPct are null and not zero: a player who has never won must not out-rank one
+ * who has, and must not tie with a player who won by nothing.
  */
+let statsRankBy = "wins";                 // transient view state, like swapDialogState
+
 const marginOf = p => (p.avgWinMargin === null || p.avgWinMargin === undefined) ? -1 : p.avgWinMargin;
 
+/** Win percentage over DECIDED games. Games without a score count for nobody. */
+function winPctOf(p){
+  const decided = p.wins + p.losses;
+  return decided ? p.wins / decided : null;
+}
+const pctOf = p => { const v = winPctOf(p); return v === null ? -1 : v; };
+const fmtPct = p => { const v = winPctOf(p); return v === null ? "–" : Math.round(v * 100) + "%"; };
+
 function renderStats(){
+  const byPct = statsRankBy === "pct";
   const rows = state.players.slice().sort(
-    (a, b) => b.wins - a.wins ||
+    (a, b) => (byPct ? pctOf(b) - pctOf(a) : b.wins - a.wins) ||
               marginOf(b) - marginOf(a) ||
+              b.wins - a.wins ||
               b.rating - a.rating ||
               a.name.localeCompare(b.name));
   const games = rows.map(p => p.games);
   const maxG = games.length ? Math.max(...games) : 0;
   const minG = games.length ? Math.min(...games) : 0;
 
-  $("#statsBody").innerHTML = rows.length ? rows.map(p => {
+  $("#statsHint").textContent = byPct
+    ? "Ranked by win percentage"
+    : "Ranked by most wins";
+
+  $("#statsBody").innerHTML = rows.length ? rows.map((p, i) => {
     const mates = Object.keys(p.teammates).length;
     const opps = Object.keys(p.opponents).length;
     return `<tr class="${p.games === minG && maxG > minG ? "under" : ""}">
+      <td class="num rank-col">${i + 1}</td>
       <td><b>${esc(p.name)}</b>${p.active ? "" : ' <span class="pill">Inactive</span>'}</td>
       <td class="num">${fmt2(p.rating)}</td>
       <td class="num">${p.games}</td>
       <td class="num"><span class="wl"><span class="w">${p.wins}</span>/<span class="l">${p.losses}</span></span></td>
       <td class="num">${p.avgWinMargin === null ? "&ndash;" : fmt2(p.avgWinMargin)}</td>
+      <td class="num">${fmtPct(p)}</td>
       <td class="num">${mates}</td>
       <td class="num">${opps}</td>
       <td class="num">${p.lastRound || "—"}</td>
       <td class="num">${p.waitStreak}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="9" style="color:var(--ink-3)">No players yet.</td></tr>`;
+  }).join("") : `<tr><td colspan="11" style="color:var(--ink-3)">No players yet.</td></tr>`;
 }
 
 function renderHistory(){
@@ -2379,6 +2672,12 @@ function makeRound(){
   save();
   renderAll();
   const f = fairness();
+  // On a phone this button sits in the settings dialog, so a successful round
+  // closes it and drops the organiser back onto the main view, where the courts
+  // they just generated are. Reached only after the `error` return above, so a
+  // failure keeps the dialog open and its message visible. No-op on desktop:
+  // `settingsIsOpen` is false there, as it is whenever the dialog is shut.
+  if (settingsIsOpen()) closeSettings();
   toast(`Round ${result.roundNumber} ready — ${result.courts.length} court${result.courts.length === 1 ? "" : "s"}, ` +
         `${result.waiting.length} waiting · parity ${f.parityWord}`);
 }
@@ -2638,6 +2937,29 @@ function chosenRating(){
   return clampRating(sel);
 }
 
+/* ===================== 10. DONATION QR ===================== */
+
+/**
+ * Show the donation QR in a modal. Native <dialog>, so focus trapping, Escape and
+ * the inert backdrop come free — same as the substitute picker.
+ *
+ * The "Download QR" link points at the image file with a `download` attribute, so
+ * the device saves it rather than opening it inline. That relies on the page and
+ * the image being same-origin, which they are whether this file is opened from
+ * disk or served.
+ */
+function openDonate(){
+  const dlg = $("#donateDialog");
+  if (typeof dlg.showModal === "function"){ if (!dlg.open) dlg.showModal(); }
+  else dlg.setAttribute("open", "");              // very old browser fallback
+}
+
+function closeDonate(){
+  const dlg = $("#donateDialog");
+  if (dlg.open && typeof dlg.close === "function") dlg.close();
+  else dlg.removeAttribute("open");
+}
+
 /* ===================== 9. MOBILE SETTINGS PAGE ===================== */
 
 /**
@@ -2702,6 +3024,12 @@ function syncPanels(){
   else { dlg.removeAttribute("open"); finishCloseSettings(); }
 }
 
+/**
+ * Open the settings drawer. Phone-only on purpose: on a desktop every panel is
+ * already visible, so there is nothing to point the organiser at. `syncPanels`
+ * likewise treats the drawer as closed unless the viewport is narrow, which is
+ * why this must not be called on a wide screen.
+ */
 function openSettings(){
   if (!MOBILE_QUERY.matches) return;              // desktop already shows everything
   relocateToSettings();
@@ -2911,6 +3239,33 @@ function bindEvents(){
     toast(saveScoreFromCard(Number(e.target.dataset.court)).message);
   });
 
+  /* --- first-launch prompt --- */
+  $("#firstRunBtn").addEventListener("click", openSettings);
+
+  /* --- donate --- */
+  $("#donateBtn").addEventListener("click", openDonate);
+  $("#donateDlgClose").addEventListener("click", closeDonate);
+  // The QR lives in a sibling file. If someone copies this HTML on its own, say
+  // so plainly instead of showing a broken-image icon.
+  $("#donateQr").addEventListener("error", () => {
+    toast("Could not load gcashqr.jpg — keep it in the same folder as the HTML file.");
+  });
+
+  /* --- stats ranking toggle --- */
+  document.querySelectorAll("[data-stats-rank]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.statsRank;
+      if (mode === statsRankBy) return;
+      statsRankBy = mode;
+      document.querySelectorAll("[data-stats-rank]").forEach(b => {
+        const on = b.dataset.statsRank === mode;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      renderStats();
+    });
+  });
+
   /* --- weights --- */
   $("#weightsPanel").addEventListener("input", e => {
     const k = e.target.dataset.weight;
@@ -2954,10 +3309,11 @@ function bindEvents(){
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    // Never fire app shortcuts while the substitute modal or settings page is open.
+    // Never fire app shortcuts while any modal is open.
     const modal = $("#swapDialog");
     if (modal && modal.open) return;
     if ($("#settingsDialog").open) return;
+    if ($("#donateDialog").open) return;
     const k = e.key.toLowerCase();
     if (k === "n"){ e.preventDefault(); makeRound(); }
     if (k === "u"){ e.preventDefault(); undoRound(); }
